@@ -256,7 +256,7 @@ class Env:
         if isinstance(action, str) or isinstance(action, (int, np.integer)):
             action = {"action": action}
 
-        observations = self.task.step(
+        observations = self.task.step_continuous(
             action=action, episode=self.current_episode
         )
 

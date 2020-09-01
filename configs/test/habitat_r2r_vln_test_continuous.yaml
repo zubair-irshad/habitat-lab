@@ -1,5 +1,5 @@
 ENVIRONMENT:
-  MAX_EPISODE_STEPS: 1000
+  MAX_EPISODE_STEPS: 500
 SIMULATOR:
   FORWARD_STEP_SIZE: 0.25
   TURN_ANGLE: 15
@@ -26,6 +26,6 @@ TASK:
     SUCCESS_DISTANCE: 3.0
 DATASET:
   TYPE: R2RVLN-v1
-  SPLIT: train
+  SPLIT: test
   DATA_PATH: "data/datasets/vln/mp3d/r2r/v1/{split}/{split}.json.gz"
   SCENES_DIR: "data/scene_datasets/"

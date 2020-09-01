@@ -6,6 +6,9 @@
 
 import os
 import shutil
+import random
+
+import habitat_sim
 
 import numpy as np
 
@@ -27,7 +30,9 @@ if not os.path.exists(IMAGE_DIR):
 
 def save_map(observations, info, images):
     im = observations["rgb"]
-    top_down_map = draw_top_down_map(info, im.shape[0])
+    top_down_map = draw_top_down_map(
+        info, observations["heading"], im.shape[0]
+    )
     output_im = np.concatenate((im, top_down_map), axis=1)
     output_im = append_text_to_image(
         output_im, observations["instruction"]["text"]
@@ -51,16 +56,36 @@ def reference_path_example(mode):
     config.TASK.SENSORS.append("HEADING_SENSOR")
     config.freeze()
     with SimpleRLEnv(config=config) as env:
-        follower = ShortestPathFollower(
-            env.habitat_env.sim, goal_radius=0.5, return_one_hot=False
-        )
-        follower.mode = mode
         print("Environment creation successful")
+        sim_time = 30  # @param {type:"integer"}
+        continuous_nav = True  # @param {type:"boolean"}
+        if continuous_nav:
+            control_frequency = 10  # @param {type:"slider", min:1, max:30, step:1}
+            frame_skip = 6  # @param {type:"slider", min:1, max:30, step:1}
+        fps = control_frequency * frame_skip
+        print("fps = " + str(fps))
+        control_sequence = []
+        for action in range(int(sim_time * control_frequency)):
+            if continuous_nav:
+                # allow forward velocity and y rotation to vary
+                control_sequence.append(
+                    {
+                        "forward_velocity": random.random() * 2.0,  # [0,2)
+                        "rotation_velocity": (random.random() - 0.5) * 2.0,  # [-1,1)
+                    }
+                )
+            else:
+                control_sequence.append(random.choice(action_names))
 
-        for episode in range(3):
-            env.reset()
-            
-            
+                # create and configure a new VelocityControl structure
+        vel_control = habitat_sim.physics.VelocityControl()
+        vel_control.controlling_lin_vel = True
+        vel_control.lin_vel_is_local = True
+        vel_control.controlling_ang_vel = True
+        vel_control.ang_vel_is_local = True
+
+        for episode in range(6):
+            env.reset()            
             print(env.habitat_env.current_episode)
             episode_id = env.habitat_env.current_episode.episode_id
             print(
@@ -79,19 +104,25 @@ def reference_path_example(mode):
             reference_path = env.habitat_env.current_episode.reference_path + [
                 env.habitat_env.current_episode.goals[0].position
             ]
-            for point in reference_path:
-                done = False
-                while not done:
-                    best_action = follower.get_next_action(point)
-                    print(best_action)
-                    if best_action == None or best_action ==0:
-                        break
-                    observations, reward, done, info = env.step(best_action)
+
+            # manually control the object's kinematic state via velocity integration
+            time_step = 1.0 / (frame_skip * control_frequency)
+            print("time_step = " + str(time_step))
+            for action in control_sequence:
+                # apply actions
+                if continuous_nav:
+                    # update the velocity control
+                    # local forward is -z
+                    vel_control.linear_velocity = np.array([0, 0, -action["forward_velocity"]])
+                    # local up is y
+                    vel_control.angular_velocity = np.array([0, action["rotation_velocity"], 0])
+
+                    observations, reward, done, info = env.step(vel_control)
                     save_map(observations, info, images)
-                    steps += 1
+                    steps+=1
 
             print(f"Navigated to goal in {steps} steps.")
-            images_to_video(images, dirname, str(episode_id))
+            images_to_video(images, dirname, str(episode_id), fps = int (1.0/time_step))
             images = []
 
 

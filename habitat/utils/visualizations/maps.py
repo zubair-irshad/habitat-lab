@@ -68,7 +68,7 @@ def draw_agent(
 
     # Rotate before resize to keep good resolution.
     rotated_agent = scipy.ndimage.interpolation.rotate(
-        AGENT_SPRITE, agent_rotation * 180 / np.pi
+        AGENT_SPRITE, int(agent_rotation) * 180 / np.pi
     )
     # Rescale because rotation may result in larger image than original, but
     # the agent sprite size should stay the same.
