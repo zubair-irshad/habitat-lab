@@ -265,7 +265,7 @@ class HabitatSim(habitat_sim.Simulator, Simulator):
         return observations
 
     def step_cas(self, action):
-        sim_obs = self._sim.step_cas(action)
+        sim_obs = super().step_cas(action)
         self._prev_sim_obs = sim_obs
         observations = self._sensor_suite.get_observations(sim_obs)
         return observations

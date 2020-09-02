@@ -399,10 +399,13 @@ def reference_path_example(mode):
             steps_dict[episode] = steps
             # images_to_video(images, dirname, str(episode_id), fps = int (1.0/time_step))
             images = []
-        
-        new_data_dict['episodes'] = new_data_list 
-        path = '/home/mirshad7/habitat-lab/data/datasets/vln/mp3d/r2r/robo_vln/train/train.json.gz'
-        compress_json.dump(new_data_dict, path)
+
+
+        steps_path =  '/home/mirshad7/habitat-lab/train_steps.json.gz'       
+        # new_data_dict['episodes'] = new_data_list 
+        # path = '/home/mirshad7/habitat-lab/data/datasets/vln/mp3d/r2r/robo_vln/train/train.json.gz'
+        # compress_json.dump(new_data_dict, path)
+        compress_json.dump(steps_dict, steps_path)
         print("collided trajectories:", collided_trajectories)
 
 
